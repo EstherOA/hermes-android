@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">hermes-android</string>
+    <string name="access_token">pk.eyJ1IjoiYmx1ZWljZWRwZW4iLCJhIjoiY2pzMjVyaGtiMGozMzN5cGp0Mmc4bWZ4eCJ9.hoQIGLSsXTp9aNIaQDnX8w</string>
+    <string name="user_location_permission_explanation">This app needs location permissions to show its functionality.</string>
+    <string name="user_location_permission_not_granted">You didn\'t grant location permissions.</string>
+    <!--Zoom in and out map instruction for toast-->
+    <string name="zoom_map_in_and_out_instruction">Zoom in and out to see assigned properties</string>
+    <string name="tap_on_marker_instruction">Tap on any marker to set your origin and destination</string>
+</resources>

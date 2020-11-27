@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item android:id="@+id/complete"
+        android:title="Mark as Complete" />
+    <item android:id="@+id/missing"
+        android:title="Property not found" />
+    <item android:id="@+id/report"
+        android:title="Report Issue" />
+</menu>
