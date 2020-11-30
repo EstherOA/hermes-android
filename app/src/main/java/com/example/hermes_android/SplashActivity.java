@@ -17,7 +17,6 @@ public class SplashActivity extends AppCompatActivity {
         //check if authenticated
 
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_splash);
         SystemClock.sleep(2000);
         Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
