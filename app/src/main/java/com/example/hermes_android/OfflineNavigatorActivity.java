@@ -13,6 +13,7 @@ import android.graphics.PointF;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.location.LocationProvider;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
@@ -55,6 +56,7 @@ import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
 import com.mapbox.services.android.navigation.ui.v5.NavigationLauncher;
 import com.mapbox.services.android.navigation.ui.v5.NavigationLauncherOptions;
 import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute;
+import com.mapbox.services.android.navigation.v5.navigation.MapboxNavigation;
 import com.mapbox.turf.TurfAssertions;
 import com.mapbox.turf.TurfConversion;
 import com.mapbox.turf.TurfMeasurement;
@@ -110,13 +112,14 @@ public class OfflineNavigatorActivity extends AppCompatActivity implements Mapbo
     private Point origin;
     private Point destination;
     private Button button;
-    private Point currentLocation;
+    private Location currentLocation;
     private LocationEngine locationEngine;
     private OfflineNavigatorActivityLocationCallback callback =
             new OfflineNavigatorActivityLocationCallback(this);
     private FeatureCollection routeCollection;
     private int currentLeg = 0;
     private boolean markerSelected = false;
+    private boolean navigationActive = false;
 
 
     @Override
@@ -312,9 +315,21 @@ public class OfflineNavigatorActivity extends AppCompatActivity implements Mapbo
                 activity.drawProgressLine();
 
 // Pass the new location to the Maps SDK's LocationComponent
-                if (activity.mapboxMap != null && result.getLastLocation() != null) {
-                    activity.mapboxMap.getLocationComponent().forceLocationUpdate(result.getLastLocation());
-                    activity.currentLocation = Point.fromLngLat(result.getLastLocation().getLongitude(), result.getLastLocation().getLatitude());
+                if (activity.mapboxMap != null) {
+                    activity.mapboxMap.getLocationComponent().forceLocationUpdate(location);
+                    activity.currentLocation = location;
+
+                   if(activity.navigationActive) {
+                       //animate camera to new position if navigation is active
+                    CameraPosition position = new CameraPosition.Builder()
+                            .target(new LatLng(location.getLatitude(), location.getLongitude())) // Sets the new camera position
+                            .zoom(20) // Sets the zoom
+                            .bearing(location.getBearing())
+                            .tilt(30)
+                            .build(); // Creates a CameraPosition from the builder
+
+                    activity.mapboxMap.animateCamera(CameraUpdateFactory
+                            .newCameraPosition(position), 2000);}
                 }
             }
         }
@@ -371,6 +386,7 @@ public class OfflineNavigatorActivity extends AppCompatActivity implements Mapbo
 
     //draw navigation route
     private void drawRoute() {
+
         try {
             Style style = mapboxMap.getStyle();
             if(style != null) {
@@ -442,18 +458,19 @@ public class OfflineNavigatorActivity extends AppCompatActivity implements Mapbo
 
     //start navigation with progress line and camera following user
     private void startNavigation() {
+
         try {
-            button.setBackgroundColor(getResources().getColor(R.color.mapboxRed));
-            button.setText("End Navigation");
             Feature start = routeCollection.features().get(0);
             //if user location is far from start display alert
+            Log.d("longitude: ", String.valueOf(currentLocation.getLongitude()));
+            Log.d("latitude: ", String.valueOf(currentLocation.getLatitude()));
             Route.Legs.Steps.Geometry geom = new GsonBuilder().create().fromJson(start.geometry().toJson(), Route.Legs.Steps.Geometry.class);
-
-            double distance = distance(currentLocation, Point.fromLngLat(geom.coordinates[0][0], geom.coordinates[0][1]));
+            Point locationPoint = Point.fromLngLat(currentLocation.getLongitude(), currentLocation.getLatitude());
+            double distance = distance(locationPoint, Point.fromLngLat(geom.coordinates[0][0], geom.coordinates[0][1]));
             if(distance > 3) {
                 AlertDialog alertDialog = new AlertDialog.Builder(OfflineNavigatorActivity.this).create();
                 alertDialog.setTitle("Warning");
-                alertDialog.setMessage("Your current location is far from the start point. Start anyway?");
+                alertDialog.setMessage("Your current location is far from the start point");
                 alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
@@ -461,17 +478,11 @@ public class OfflineNavigatorActivity extends AppCompatActivity implements Mapbo
                             }
                         });
                 alertDialog.show();
-
-                //if user start navigation animate camera to start
-                CameraPosition position = new CameraPosition.Builder()
-                        .target(new LatLng(geom.coordinates[0][1], geom.coordinates[0][0])) // Sets the new camera position
-                        .zoom(17) // Sets the zoom
-                        .tilt(30)
-                        .build(); // Creates a CameraPosition from the builder
-
-                mapboxMap.animateCamera(CameraUpdateFactory
-                        .newCameraPosition(position), 4000);
+                return;
             }
+            navigationActive = true;
+            button.setBackgroundColor(getResources().getColor(R.color.mapboxRed));
+            button.setText("End Navigation");
         } catch (Exception e) {
             Log.d("Error: ", e.getMessage());
         } }
@@ -483,13 +494,11 @@ public class OfflineNavigatorActivity extends AppCompatActivity implements Mapbo
             }
             Feature start = routeCollection.features().get(currentLeg);
             Route.Legs.Steps.Geometry geom = new GsonBuilder().create().fromJson(start.geometry().toJson(), Route.Legs.Steps.Geometry.class);
-
-            double distanceFromStart = distance(currentLocation, Point.fromLngLat(geom.coordinates[0][0], geom.coordinates[0][1]));
-            double currentDistance = distance(currentLocation, Point.fromLngLat(geom.coordinates[geom.coordinates.length-1][0], geom.coordinates[geom.coordinates.length-1][1]));
+            Point locationPoint = Point.fromLngLat(currentLocation.getLongitude(), currentLocation.getLatitude());
+            double distanceFromStart = distance(locationPoint, Point.fromLngLat(geom.coordinates[0][0], geom.coordinates[0][1]));
+            double currentDistance = distance(locationPoint, Point.fromLngLat(geom.coordinates[geom.coordinates.length-1][0], geom.coordinates[geom.coordinates.length-1][1]));
 
             if(distanceFromStart > 3) {
-//                Toast.makeText(this, "Please move closer to the starting point",
-//                        Toast.LENGTH_SHORT).show();
                 return;
             }
                 try {

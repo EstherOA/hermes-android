@@ -6,4 +6,8 @@
     <!--Zoom in and out map instruction for toast-->
     <string name="zoom_map_in_and_out_instruction">Zoom in and out to see assigned properties</string>
     <string name="tap_on_marker_instruction">Tap on any marker to set your origin and destination</string>
+    <string name="generate_coordinates">Stand at the new property and tap the button below to generate coordinates:</string>
+    <string name="send_report">Send Report</string>
+    <string name="generate_coordinates_button">Generate Coordinates</string>
+    <string name="please_enter_your_complaint_below">Please enter your complaint below:</string>
 </resources>
